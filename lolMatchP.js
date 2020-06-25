@@ -27,8 +27,9 @@
 }
  */
 
-// const lolData = require("./matches.json");
-// console.log(typeof lol);
+const lolData = require("./matches.json");
+console.log("typeof lolData", typeof lolData);
+
 // receives Input: array of arrays, returns Output: Stats Object
 const mineData = (arr) => {
   if (!arr) {
@@ -36,6 +37,7 @@ const mineData = (arr) => {
   }
   const statsObj = {};
   const length = arr.length;
+  console.log("mineData -> length", length);
 
   arr.forEach((match, i) => {
     if (match.length < 3) {
@@ -43,15 +45,39 @@ const mineData = (arr) => {
     } else {
       // sort names in case data contains teams with same members listed in diff order
       // would be great if they were sorted beforehand
-      let champOne = match[i][0].sort().split().join("");
-      let champTwo = match[i][1].sort().split().join("");
+      // console.log("mineData -> match[0]", match[0]);
+      let champOne = match[0].sort().join("");
+      let champTwo = match[1].sort().join("");
 
-      if (match[i][2] === 1) {
+      if (match[2] === 1) {
+        // console.log("mineData -> before swap [champOne, champTwo]", [
+        //   champOne,
+        //   champTwo,
+        // ]);
+
         [champOne, champTwo] = [champTwo, champOne];
+
+        // console.log("mineData -> after swap  [champOne, champTwo]", [
+        //   champOne,
+        //   champTwo,
+        // ]);
       }
 
-      statsObj[champOne] = statsObj[champOne] || { win: 0, loss: 0, winP: 0 };
-      statsObj[champTwo] = statsObj[champTwo] || { win: 0, loss: 0, winP: 0 };
+      if (statsObj[champOne] === undefined) {
+        // console.log(
+        //   "mineData -> typeof statsObj[champOne]",
+        //   typeof statsObj[champOne]
+        // );
+        statsObj[champOne] = { win: 0, loss: 0, winP: 0 };
+      }
+
+      if (statsObj[champTwo] === undefined) {
+        // console.log(
+        //   "mineData -> typeof statsObj[champTwo]",
+        //   typeof statsObj[champTwo]
+        // );
+        statsObj[champTwo] = { win: 0, loss: 0, winP: 0 };
+      }
 
       statsObj[champOne].win++;
       statsObj[champOne].winP =
@@ -68,18 +94,35 @@ const mineData = (arr) => {
   return statsObj;
 };
 
-const lolStats = (teamStats) => {
+const runTeamStats = (teamStats) => {
+  // console.log("runTeamStats -> typeof teamStats", typeof teamStats);
   let meanSum = 0;
   let meanP = 0;
+  let stdDev = 0;
   let teamCount = Object.keys(teamStats).length;
+  console.log("runTeamStats -> teamCount", teamCount);
 
-  for (const team of Object.keys(teamStats)) {
-    meanSum += team.winP;
+  // console.log(
+  //   "runTeamStats -> Object.keys(teamStats).sort();",
+  //   Object.keys(teamStats).sort()
+  // );
+
+  for (const [team, val] of Object.entries(teamStats)) {
+    console.log("runTeamStats -> team", team);
+    console.log("runTeamStats -> val", val);
+    meanSum += val.winP;
   }
 
+  console.log("runTeamStats -> meanSum", meanSum);
   meanP = meanSum / teamCount;
+  console.log("runTeamStats -> meanP", meanP);
 
+  // for (const team of Object.keys(teamStats)) {
+  // }
   return teamStats;
 };
 
-const lolStats = mineData(lolData);
+const lolBattleStats = mineData(lolData);
+const lolTeamStats = runTeamStats(lolBattleStats);
+console.log("typeof lolBattleStats", typeof lolBattleStats);
+// console.log("lolTeamStats", lolTeamStats);
