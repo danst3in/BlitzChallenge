@@ -28,101 +28,97 @@
  */
 
 const lolData = require("./matches.json");
-console.log("typeof lolData", typeof lolData);
 
-// receives Input: array of arrays, returns Output: Stats Object
-const mineData = (arr) => {
-  if (!arr) {
-    throw new Error("Dataset contains undefined matches");
-  }
-  const statsObj = {};
-  const length = arr.length;
-  console.log("mineData -> length", length);
-
-  arr.forEach((match, i) => {
-    if (match.length < 3) {
-      console.error(`Match #${i + 1} - is missing data.`);
-    } else {
-      // sort names in case data contains teams with same members listed in diff order
-      // would be great if they were sorted beforehand
-      // console.log("mineData -> match[0]", match[0]);
-      let champOne = match[0].sort().join("");
-      let champTwo = match[1].sort().join("");
-
-      if (match[2] === 1) {
-        // console.log("mineData -> before swap [champOne, champTwo]", [
-        //   champOne,
-        //   champTwo,
-        // ]);
-
-        [champOne, champTwo] = [champTwo, champOne];
-
-        // console.log("mineData -> after swap  [champOne, champTwo]", [
-        //   champOne,
-        //   champTwo,
-        // ]);
-      }
-
-      if (statsObj[champOne] === undefined) {
-        // console.log(
-        //   "mineData -> typeof statsObj[champOne]",
-        //   typeof statsObj[champOne]
-        // );
-        statsObj[champOne] = { win: 0, loss: 0, winP: 0 };
-      }
-
-      if (statsObj[champTwo] === undefined) {
-        // console.log(
-        //   "mineData -> typeof statsObj[champTwo]",
-        //   typeof statsObj[champTwo]
-        // );
-        statsObj[champTwo] = { win: 0, loss: 0, winP: 0 };
-      }
-
-      statsObj[champOne].win++;
-      statsObj[champOne].winP =
-        statsObj[champOne].win /
-        (statsObj[champOne].win + statsObj[champOne].loss);
-
-      statsObj[champTwo].loss++;
-      statsObj[champTwo].winP =
-        statsObj[champTwo].win /
-        (statsObj[champTwo].win + statsObj[champTwo].loss);
+class LolProbability {
+  // receives Input: array of arrays, returns Output: Stats Object
+  mineData(arr) {
+    if (!arr) {
+      throw new Error("Dataset contains undefined matches");
     }
-  });
+    const statsObj = {};
+    const length = arr.length;
+    console.log("mineData -> length", length);
 
-  return statsObj;
-};
+    const updateChamp = (champion, win = true) => {
+      if (statsObj[champion] === undefined) {
+        statsObj[champion] = { win: 0, loss: 0, winP: 0 };
+      }
 
-const runTeamStats = (teamStats) => {
-  // console.log("runTeamStats -> typeof teamStats", typeof teamStats);
-  let meanSum = 0;
-  let meanP = 0;
-  let stdDev = 0;
-  let teamCount = Object.keys(teamStats).length;
-  console.log("runTeamStats -> teamCount", teamCount);
+      if (win) {
+        statsObj[champion].win++;
+        statsObj[champion].winP =
+          statsObj[champion].win /
+          (statsObj[champion].win + statsObj[champion].loss);
+      } else {
+        statsObj[champion].loss++;
+        statsObj[champion].winP =
+          statsObj[champion].win /
+          (statsObj[champion].win + statsObj[champion].loss);
+      }
+    };
 
-  // console.log(
-  //   "runTeamStats -> Object.keys(teamStats).sort();",
-  //   Object.keys(teamStats).sort()
-  // );
+    arr.forEach((match, i) => {
+      if (match.length < 3) {
+        console.error(`Match #${i + 1} - is missing data.`);
+      } else {
+        let champOne = match[0];
+        let champTwo = match[1];
 
-  for (const [team, val] of Object.entries(teamStats)) {
-    console.log("runTeamStats -> team", team);
-    console.log("runTeamStats -> val", val);
-    meanSum += val.winP;
+        if (match[2] === 1) {
+          [champOne, champTwo] = [champTwo, champOne];
+        }
+
+        champOne.forEach((champ) => updateChamp(champ));
+        champTwo.forEach((champ) => updateChamp(champ, false));
+      }
+
+      // console.log("mineData -> statsObj", statsObj);
+    });
+    return statsObj;
   }
 
-  console.log("runTeamStats -> meanSum", meanSum);
-  meanP = meanSum / teamCount;
-  console.log("runTeamStats -> meanP", meanP);
+  runChampStats(champStats) {
+    // console.log("runchampStats -> typeof champStats", typeof champStats);
+    let meanSum = 0;
+    let meanP = 0;
+    let variance = 0;
+    let stdDev = 0;
+    let champCount = 0;
+    console.log("runChampStats -> champCount", champCount);
 
-  // for (const team of Object.keys(teamStats)) {
-  // }
-  return teamStats;
-};
+    for (const champ of Object.values(champStats)) {
+      // console.log("runTeamStats -> champ", champ);
+      meanSum += champ.winP;
+      champCount++;
+    }
 
-const lolBattleStats = mineData(lolData);
-const lolTeamStats = runTeamStats(lolBattleStats);
-console.log("typeof lolBattleStats", typeof lolBattleStats);
-// console.log("lolTeamStats", lolTeamStats);
+    console.log("runChampStats -> meanSum", meanSum);
+    meanP = meanSum / champCount;
+    console.log("runChampStats -> meanP", meanP);
+
+    for (const champ of Object.values(champStats)) {
+      // console.log("runTeamStats -> champ", champ);
+      variance += (champ.winP - meanP) * (champ.winP - meanP);
+    }
+
+    variance = variance / champCount;
+    console.log("runChampStats -> variance", variance);
+    stdDev = Math.sqrt(variance);
+    console.log("runChampStats -> stdDev", stdDev);
+
+    for (const champ of Object.values(champStats)) {
+      // console.log("runTeamStats -> champ", champ);
+      champ.deviations = Math.abs(champ.winP - meanP) / stdDev;
+      champ.deviant = champ.deviations > 1 ? true : false;
+    }
+
+    return champStats;
+  }
+}
+
+const lolBattleTest = new LolProbability();
+
+const lolBattleStats = lolBattleTest.mineData(lolData);
+// console.log("typeof lolBattleStats", typeof lolBattleStats);
+const lolChampStats = lolBattleTest.runChampStats(lolBattleStats);
+console.log("lolChampStats", lolChampStats);
