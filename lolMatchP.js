@@ -39,7 +39,26 @@ class LolProbability {
     const length = arr.length;
     console.log("mineData -> length", length);
 
-    const updateChamp = (champion, win = true) => {
+    const updateOpp = (champion, oppChamp, win = true) => {
+      if (statsObj[champion][oppChamp] === undefined) {
+        statsObj[champion][oppChamp] = { win: 0, loss: 0, winP: 0 };
+      }
+      if (win) {
+        statsObj[champion][oppChamp].win++;
+        statsObj[champion][oppChamp].winP =
+          statsObj[champion][oppChamp].win /
+          (statsObj[champion][oppChamp].win +
+            statsObj[champion][oppChamp].loss);
+      } else {
+        statsObj[champion][oppChamp].loss++;
+        statsObj[champion][oppChamp].winP =
+          statsObj[champion][oppChamp].win /
+          (statsObj[champion][oppChamp].win +
+            statsObj[champion][oppChamp].loss);
+      }
+    };
+
+    const updateChamp = (champion, oppTeam, win = true) => {
       if (statsObj[champion] === undefined) {
         statsObj[champion] = { win: 0, loss: 0, winP: 0 };
       }
@@ -49,11 +68,13 @@ class LolProbability {
         statsObj[champion].winP =
           statsObj[champion].win /
           (statsObj[champion].win + statsObj[champion].loss);
+        oppTeam.forEach((opponent) => updateOpp(champion, opponent));
       } else {
         statsObj[champion].loss++;
         statsObj[champion].winP =
           statsObj[champion].win /
           (statsObj[champion].win + statsObj[champion].loss);
+        oppTeam.forEach((opponent) => updateOpp(champion, opponent, false));
       }
     };
 
@@ -68,8 +89,8 @@ class LolProbability {
           [champOne, champTwo] = [champTwo, champOne];
         }
 
-        champOne.forEach((champ) => updateChamp(champ));
-        champTwo.forEach((champ) => updateChamp(champ, false));
+        champOne.forEach((champ) => updateChamp(champ, champTwo));
+        champTwo.forEach((champ) => updateChamp(champ, champOne, false));
       }
     });
     return statsObj;
@@ -81,13 +102,14 @@ class LolProbability {
     let variance = 0;
     let stdDev = 0;
     let champCount = 0;
-    console.log("runChampStats -> champCount", champCount);
+    // champStats.deviants = {};
 
     for (const champ of Object.values(champStats)) {
       meanSum += champ.winP;
       champCount++;
     }
 
+    console.log("runChampStats -> champCount", champCount);
     console.log("runChampStats -> meanSum", meanSum);
     meanP = meanSum / champCount;
     console.log("runChampStats -> meanP", meanP);
@@ -105,13 +127,65 @@ class LolProbability {
       champ.deviations = (champ.winP - meanP) / stdDev;
       champ.deviant =
         champ.deviations > 1 ? true : champ.deviations < -1 ? true : false;
+      if (champ.deviant === true) {
+        console.log(
+          "LolProbability -> runChampStats -> champ.deviations",
+          champ.deviations
+        );
+      }
     }
 
     return champStats;
   }
 
-  computePVal(champion, oppArr) {
-    let cProb = 0;
+  computePVals(statObj, champion, oppArr) {
+    const champProbObj = {
+      pVal: statObj[champion].winP,
+      cProb: {},
+      teamProb: 1,
+    };
+
+    // P(A intersect B)
+    // win% vs particular opponent
+    let champProbs = oppArr.map((opp) => {
+      console.log(
+        "LolProbability -> computePVals -> statObj[champion][opp].winP",
+        statObj[champion][opp].winP
+      );
+      return statObj[champion][opp].winP;
+    });
+
+    // P(B)
+    // loss% vs any/all champion
+    let oppProbs = oppArr.map((opp) => {
+      console.log(
+        "LolProbability -> computePVals -> 1 - statObj[opp].winP",
+        1 - statObj[opp].winP
+      );
+      return 1 - statObj[opp].winP;
+    });
+
+    // // loss% vs particular champion
+    // let oppProbs = oppArr.map((opp) => {
+    //   return 1 - statObj[opp][champion].winP;
+    // });
+
+    for (let i = 0; i < oppArr.length; i++) {
+      // P(A |B) = P(A intersect B)/P(B)
+      // probability champion wins and opponent loses divided
+      // by probability opponent loses
+      champProbObj.cProb[oppArr[i]] = champProbs[i] / oppProbs[i];
+      // probability champion loses to every opponent of opposing team (based on cProb)
+      champProbObj.teamProb =
+        champProbObj.teamProb * (1 - champProbObj.cProb[oppArr[i]]);
+    }
+
+    // P(at least 1 success) = 1−P(all failures)
+    // 1 - probability champion loses to every opponent of opposing team (based on cProb)
+    champProbObj.teamProb = 1 - champProbObj.teamProb;
+
+    console.log("LolProbability -> computePVal -> champProbObj", champProbObj);
+    return champProbObj;
   }
 }
 
@@ -119,5 +193,23 @@ const lolBattleTest = new LolProbability();
 
 const lolBattleStats = lolBattleTest.mineData(lolData);
 // console.log("typeof lolBattleStats", typeof lolBattleStats);
+const lolPValTest = lolBattleTest.computePVals(lolBattleStats, "Gangplank", [
+  "Taric",
+  "Fiddlesticks",
+  "Rakan",
+  "Warwick",
+  "Sett",
+]);
+// console.log("lolPValTest", lolPValTest);
+console.log(
+  lolBattleTest.computePVals(lolBattleStats, "Leblanc", [
+    "Braum",
+    "Kayle",
+    "Anivia",
+    "Quinn",
+    "Mordekaiser",
+  ])
+);
+
 const lolChampStats = lolBattleTest.runChampStats(lolBattleStats);
-console.log("lolChampStats", lolChampStats);
+// console.log("lolChampStats", lolChampStats);

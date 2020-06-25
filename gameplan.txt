@@ -13,8 +13,12 @@ analyze all data
   - In each character object
     - store how many std deviations from the mean for character win count (or win %?)
   ?? variance of winning percentage overall from the sum of the individual game variances.??
-  - Conditional Probability: champ1 winning% * (1 - champ2 winning %) / (1 - champ2 winning %)
+  
+  X Conditional Probability: champ1 winning% * (1 - champ2 winning %) / (1 - champ2 winning %)
   - Conditional Probability: (champ1 winning% vs champ2) / (1 - champ2 winning %) - if storing individual matchups
+  X Conditional Probability of champ1 winning and champ2 losing: champ1 winning% * (1 - champ2 winning % vs champ1) - if storing individual matchups
+  X P(at least 1 success) = 1−P(all failures) >>> 1 - (champ2 winning% vs champ1)*(champ3 winning% vs champ1)*(champ4 winning% vs champ1)*(champ5 winning% vs champ1)*(champ6 winning% vs champ1)
+  - P(at least 1 success) = 1−P(all failures) >>> 1 - (1 - champ1 winning% vs champ2)*(1 - champ1 winning% vs champ3)*(1 - champ1 winning% vs champ4)*(1 - champ1 winning% vs champ5)*(1 - champ1 winning% vs champ6)
 
 
 {
