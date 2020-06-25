@@ -13,13 +13,27 @@ analyze all data
   - In each character object
     - store how many std deviations from the mean for character win count (or win %?)
   ?? variance of winning percentage overall from the sum of the individual game variances.??
+  - Conditional Probability: champ1 winning% * (1 - champ2 winning %) / (1 - champ2 winning %)
+  - Conditional Probability: (champ1 winning% vs champ2) / (1 - champ2 winning %) - if storing individual matchups
+
 
 {
   char1: {
     win: ##,
     loss: ##,
-    win%: ## 
-    stdDevs: ###
+    win%: ##, 
+    stdDevs: ###,
+    deviant: > 1 || < -1 = true,
+    charA: {
+      win: ##,
+      loss: ##,
+      win%: ##,
+    },
+    charB: {
+      win: ##,
+      loss: ##,
+      win%: ##,
+    }
   },
   
 

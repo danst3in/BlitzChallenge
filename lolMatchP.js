@@ -71,14 +71,11 @@ class LolProbability {
         champOne.forEach((champ) => updateChamp(champ));
         champTwo.forEach((champ) => updateChamp(champ, false));
       }
-
-      // console.log("mineData -> statsObj", statsObj);
     });
     return statsObj;
   }
 
   runChampStats(champStats) {
-    // console.log("runchampStats -> typeof champStats", typeof champStats);
     let meanSum = 0;
     let meanP = 0;
     let variance = 0;
@@ -87,7 +84,6 @@ class LolProbability {
     console.log("runChampStats -> champCount", champCount);
 
     for (const champ of Object.values(champStats)) {
-      // console.log("runTeamStats -> champ", champ);
       meanSum += champ.winP;
       champCount++;
     }
@@ -97,7 +93,6 @@ class LolProbability {
     console.log("runChampStats -> meanP", meanP);
 
     for (const champ of Object.values(champStats)) {
-      // console.log("runTeamStats -> champ", champ);
       variance += (champ.winP - meanP) * (champ.winP - meanP);
     }
 
@@ -107,12 +102,16 @@ class LolProbability {
     console.log("runChampStats -> stdDev", stdDev);
 
     for (const champ of Object.values(champStats)) {
-      // console.log("runTeamStats -> champ", champ);
-      champ.deviations = Math.abs(champ.winP - meanP) / stdDev;
-      champ.deviant = champ.deviations > 1 ? true : false;
+      champ.deviations = (champ.winP - meanP) / stdDev;
+      champ.deviant =
+        champ.deviations > 1 ? true : champ.deviations < -1 ? true : false;
     }
 
     return champStats;
+  }
+
+  computePVal(champion, oppArr) {
+    let cProb = 0;
   }
 }
 
