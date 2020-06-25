@@ -1,0 +1,26 @@
+analyze all data
+  - create object for char stats
+  - create object for each character 
+    - store win count (or win %?) for each character
+  - Determine average win count (or win %?) for all characters
+    - Determine mean win count (or win %?)
+    - Determine global Character variance and std deviation
+    - Determine population variance btw characters [squared diff btw each win num and mean]
+    - Determine standard deviation btw characters [sqrt of variance]
+  - Determine Team based stats (per team)
+    - Determine population variance [squared diff btw each num and mean]
+    - Determine standard deviation [sqrt of variance]
+  - In each character object
+    - store how many std deviations from the mean for character win count (or win %?)
+  ?? variance of winning percentage overall from the sum of the individual game variances.??
+
+{
+  char1: {
+    win: ##,
+    loss: ##,
+    win%: ## 
+    stdDevs: ###
+  },
+  
+
+}
