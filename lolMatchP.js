@@ -28,7 +28,7 @@ const lolData = require("./matches.json");
 
 class LolProbability {
   // receives Input: array of arrays, returns Output: Stats Object
-  // Runtime ~O(2n^3)
+  // Runtime ~O(n*2m^2) ~~O(n*k)
   mineData(arr) {
     if (!arr) {
       throw new Error("Dataset contains undefined matches");
@@ -149,7 +149,7 @@ class LolProbability {
 
   // P(WPA|WPB) = WPA*(1 - WPB) / WPA*(1 - WPB)  + WPB*(1 - WPA) // PA = winning%AvsB *(loss%BvsA) / PNoDraw
 
-  // Runtime O(2n)
+  // Runtime O(2m)  ~O(k)
   computePVals(statObj, champion, oppArr) {
     const champProbObj = {
       pVal: statObj[champion].winP,
