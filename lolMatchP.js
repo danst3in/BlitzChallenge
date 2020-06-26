@@ -28,6 +28,7 @@ const lolData = require("./matches.json");
 
 class LolProbability {
   // receives Input: array of arrays, returns Output: Stats Object
+  // Runtime ~O(n*2m^2) ~~O(n*k)
   mineData(arr) {
     if (!arr) {
       throw new Error("Dataset contains undefined matches");
@@ -93,6 +94,7 @@ class LolProbability {
     return statsObj;
   }
 
+  // Runtime O(3n)
   runChampStats(champStats) {
     let meanSum = 0;
     let meanP = 0;
@@ -135,51 +137,52 @@ class LolProbability {
     return champStats;
   }
 
+  // Prob Formula Source - https://sabr.org/journal/article/probabilities-of-victory-in-head-to-head-team-matchups/
+  // Probabilities of Victory in Head-to-Head Team Matchups by John A. Richards
+  // PA = WPA*(1 - WPB)   // PA = winning%AvsB *(loss%BvsA)
+  // PB = WPB*(1 - WPA)   // PB = winning%BvsA *(loss%AvsB)
+
+  // PDraw = 1 - WPA*(1 - WPB)  + WPB*(1 - WPA)
+
+  // PA = WPA*(1 - WPB) / WPA*(1 - WPB)  + WPB*(1 - WPA) // PA = winning%AvsB *(loss%BvsA) / PNoDraw
+  // PB = WPB*(1 - WPA) / WPA*(1 - WPB)  + WPB*(1 - WPA) // PB = winning%BvsA *(loss%AvsB) / PNoDraw
+
+  // P(WPA|WPB) = WPA*(1 - WPB) / WPA*(1 - WPB)  + WPB*(1 - WPA) // PA = winning%AvsB *(loss%BvsA) / PNoDraw
+
+  // Runtime O(2m)  ~O(k)
   computePVals(statObj, champion, oppArr) {
     const champProbObj = {
       pVal: statObj[champion].winP,
       cProb: {},
-      teamProb: 1,
+      teamProb: 0,
     };
 
-    // P(A intersect B)
-    // win% vs particular opponent
-    let champProbs = oppArr.map((opp) => {
+    let champProbs = [];
+    let oppProbs = [];
+    oppArr.forEach((opp, i) => {
       console.log(
         "LolProbability -> computePVals -> statObj[champion][opp].winP",
         statObj[champion][opp].winP
       );
-      return statObj[champion][opp].winP;
+
+      // WPA    // win% vs particular opponent
+      champProbs[i] = statObj[champion][opp].winP;
+      // WP(B)  // opp win% vs vs particular champion
+      oppProbs[i] = statObj[opp][champion].winP;
     });
 
-    // P(B)
-    // loss% vs any/all champion
-    let oppProbs = oppArr.map((opp) => {
-      console.log(
-        "LolProbability -> computePVals -> 1 - statObj[opp].winP",
-        1 - statObj[opp].winP
-      );
-      return 1 - statObj[opp].winP;
-    });
-
-    // // loss% vs particular champion
-    // let oppProbs = oppArr.map((opp) => {
-    //   return 1 - statObj[opp][champion].winP;
-    // });
-
+    // Secondary Challenge
+    // P(WPA|WPB) = WPA*(1 - WPB) / WPA*(1 - WPB)  + WPB*(1 - WPA) // PA = winning%AvsB *(loss%BvsA) / PNoDraw
     for (let i = 0; i < oppArr.length; i++) {
-      // P(A |B) = P(A intersect B)/P(B)
-      // probability champion wins and opponent loses divided
-      // by probability opponent loses
-      champProbObj.cProb[oppArr[i]] = champProbs[i] / oppProbs[i];
-      // probability champion loses to every opponent of opposing team (based on cProb)
-      champProbObj.teamProb =
-        champProbObj.teamProb * (1 - champProbObj.cProb[oppArr[i]]);
+      // "probability champion wins and opponent loses divided" by "probability there is no draw"
+      champProbObj.cProb[oppArr[i]] =
+        (champProbs[i] * (1 - oppProbs[i])) /
+        (champProbs[i] * (1 - oppProbs[i]) + oppProbs[i] * (1 - champProbs[i]));
+      // Law of Total Probability
+      // P(A) = P(A|B1)*P(B1) + P(A|B2)*P(B2)... P(A|Bn)*P(Bn)
+      // P(B) = 1/teamsize
+      champProbObj.teamProb += champProbObj.cProb[oppArr[i]] / oppArr.length;
     }
-
-    // P(at least 1 success) = 1−P(all failures)
-    // 1 - probability champion loses to every opponent of opposing team (based on cProb) = Beats at least 1 opponent
-    champProbObj.teamProb = 1 - champProbObj.teamProb;
 
     console.log("LolProbability -> computePVal -> champProbObj", champProbObj);
     return champProbObj;
