@@ -1,26 +1,23 @@
 /*
-  analyze all data
-  - create object for char stats
-  - create object for each character 
-    - store win count (or win %?) for each character
-  - Determine average win count (or win %?) for all characters
-    - Determine mean win count (or win %?)
-    - Determine global Character variance and std deviation
-    - Determine population variance btw characters [squared diff btw each win num and mean]
-    - Determine standard deviation btw characters [sqrt of variance]
-  - Determine Team based stats (per team)
-    - Determine population variance [squared diff btw each num and mean]
-    - Determine standard deviation [sqrt of variance]
-  - In each character object
-    - store how many std deviations from the mean for character win count (or win %?)
-  ?? variance of winning percentage overall from the sum of the individual game variances.??
-
+ // data structure
 {
   char1: {
     win: ##,
     loss: ##,
-    win%: ## 
-    stdDevs: ###
+    win%: ##, 
+    stdDevs: ###,
+    deviant: > 1 || < -1 = true,
+    charA: {
+      win: ##,
+      loss: ##,
+      win%: ##,
+    },
+    charB: {
+      win: ##,
+      loss: ##,
+      win%: ##,
+    },
+    charC...,
   },
   
 
@@ -181,7 +178,7 @@ class LolProbability {
     }
 
     // P(at least 1 success) = 1−P(all failures)
-    // 1 - probability champion loses to every opponent of opposing team (based on cProb)
+    // 1 - probability champion loses to every opponent of opposing team (based on cProb) = Beats at least 1 opponent
     champProbObj.teamProb = 1 - champProbObj.teamProb;
 
     console.log("LolProbability -> computePVal -> champProbObj", champProbObj);
@@ -189,10 +186,13 @@ class LolProbability {
   }
 }
 
+// initialize test class object
 const lolBattleTest = new LolProbability();
-
+//  mine json data file
 const lolBattleStats = lolBattleTest.mineData(lolData);
 // console.log("typeof lolBattleStats", typeof lolBattleStats);
+
+// compute p values for a given Mined Battle Stats: object, Champion: string, Opposing Team [string:5]
 const lolPValTest = lolBattleTest.computePVals(lolBattleStats, "Gangplank", [
   "Taric",
   "Fiddlesticks",
@@ -200,7 +200,8 @@ const lolPValTest = lolBattleTest.computePVals(lolBattleStats, "Gangplank", [
   "Warwick",
   "Sett",
 ]);
-// console.log("lolPValTest", lolPValTest);
+
+// additional test
 console.log(
   lolBattleTest.computePVals(lolBattleStats, "Leblanc", [
     "Braum",
@@ -210,6 +211,6 @@ console.log(
     "Mordekaiser",
   ])
 );
-
+// compute general statistics for a given mined battle data object
 const lolChampStats = lolBattleTest.runChampStats(lolBattleStats);
 // console.log("lolChampStats", lolChampStats);
