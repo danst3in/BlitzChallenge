@@ -1,22 +1,10 @@
-const { LolProbability } = require("./lolProbability");
-const { loadData } = require("./loadData");
+const { LolProbability } = require("../lib/LeagueOfLegendsMatchProbability");
+const { loadData } = require("../utils/load-data");
 
 // initialize test class object
 const lolBattleTest = new LolProbability();
 // process incoming data
 loadData(lolBattleTest);
-
-// compute p values for a given Mined Battle Stats: object, Champion: string, Opposing Team [string:5]
-// additional test
-// console.log(
-//   lolBattleTest.computePVals(lolBattleTest.statsObj, "Leblanc", [
-//     "Braum",
-//     "Kayle",
-//     "Anivia",
-//     "Quinn",
-//     "Mordekaiser",
-//   ])
-// );
 
 /*
  // data structure

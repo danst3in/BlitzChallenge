@@ -1,5 +1,5 @@
 const fs = require("fs");
-const { LolProbability } = require("./lolProbability");
+// const { LolProbability } = require("../lib/LeagueOfLegendsMatchProbability");
 
 function loadData(testSuiteObj) {
   // //  mine json data file
@@ -76,5 +76,17 @@ function loadData(testSuiteObj) {
   });
   return testSuiteObj;
 }
+
+// compute p values for a given Mined Battle Stats: object, Champion: string, Opposing Team [string:5]
+// additional test
+// console.log(
+//   lolBattleTest.computePVals(lolBattleTest.statsObj, "Leblanc", [
+//     "Braum",
+//     "Kayle",
+//     "Anivia",
+//     "Quinn",
+//     "Mordekaiser",
+//   ])
+// );
 
 module.exports = { loadData };

@@ -2,9 +2,9 @@
   "name": "dsblitzchallenge",
   "version": "1.0.0",
   "description": "Probability Challenge for Blitz.gg",
-  "main": "lolMatchP.js",
+  "main": "src/scripts/main.js",
   "scripts": {
-    "start": "node lolMatchP.js",
+    "start": "node src/scripts/main.js",
     "test": "jest"
   },
   "repository": {
