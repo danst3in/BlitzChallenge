@@ -47,4 +47,4 @@ Match Structure in json file:
 
 [["Gangplank","Lissandra","Malzahar","Twitch","Taric"],["Taric","Fiddlesticks","Rakan","Warwick","Sett"],0],
 [["","","","",""],["","","","",""],], // match structure emptied
-,], // unique end of match
+,0], || ,1], // unique end of match
