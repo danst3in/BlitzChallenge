@@ -1,88 +1,81 @@
-/*
- // data structure
-{
-  char1: {
-    win: ##,
-    loss: ##,
-    win%: ##, 
-    stdDevs: ###,
-    deviant: > 1 || < -1 = true,
-    charA: {
-      win: ##,
-      loss: ##,
-      win%: ##,
-    },
-    charB: {
-      win: ##,
-      loss: ##,
-      win%: ##,
-    },
-    charC...,
-  },
-  
-
-}
- */
-
-// const lolData = require("./matches.json");
 const fs = require("fs");
 
-// let lolData = fs.createReadStream("./matches.json", {
-//   flags: "r",
-//   encoding: "utf-8",
-// });
-// let buff = "";
+function loadData(testSuiteObj) {
+  // //  mine json data file
+  let lolData = fs.createReadStream("./matches.json", {
+    flags: "r",
+    encoding: "utf-8",
+  });
+  let buff = "";
 
-// lolData.on("data", (d) => {
-//   buff += d.toString();
-//   console.log("typeof buff: buff", typeof buff, ": ", buff);
-//   pump();
-// });
-
-function pump() {
-  let pointer =
-    Math.min(buff.indexOf(",0]"), buff.indexOf(",1]")) !== -1
-      ? Math.min(buff.indexOf(",0]"), buff.indexOf(",1]"))
-      : Math.max(buff.indexOf(",0]"), buff.indexOf(",1]"));
-
-  while (pointer >= 0) {
-    pointer += 3;
-    // console.log("pump -> buff[0]", buff[0]);
-    // if (buff[0] === ",") {
-    //   buff = buff.slice(1);
-    // }
-    processLine(buff.slice(0, pointer));
-    buff = buff.slice(pointer + 1);
-    if (buff[0] === ",") {
-      buff = buff.slice(1);
-    }
-    pointer =
+  function pump() {
+    let pointer =
       Math.min(buff.indexOf(",0]"), buff.indexOf(",1]")) !== -1
         ? Math.min(buff.indexOf(",0]"), buff.indexOf(",1]"))
         : Math.max(buff.indexOf(",0]"), buff.indexOf(",1]"));
+
+    while (pointer >= 0) {
+      pointer += 3;
+      processLine(buff.slice(0, pointer));
+      buff = buff.slice(pointer + 1);
+      if (buff[0] === ",") {
+        buff = buff.slice(1);
+      }
+      pointer =
+        Math.min(buff.indexOf(",0]"), buff.indexOf(",1]")) !== -1
+          ? Math.min(buff.indexOf(",0]"), buff.indexOf(",1]"))
+          : Math.max(buff.indexOf(",0]"), buff.indexOf(",1]"));
+    }
   }
+
+  function processLine(line) {
+    // make the JSON input bulletproof
+    if (line.indexOf("[[[") === 0) {
+      line = line.slice(1);
+    }
+    if (line.indexOf("]]") === [line.length - 2]) {
+      line = line.slice(0, -1);
+    }
+    if (line[line.length - 1] === ",") {
+      line = line.slice(0, line.length - 1);
+    }
+    if (line[0] === ",") {
+      line = line.slice(1);
+    }
+    if (line.length > 0) {
+      // console.log("processLine -> line", line);
+      let battleArr = JSON.parse(line);
+      // console.log("processLine -> battleArr", battleArr);
+      lolBattleTest.mineData(battleArr);
+    }
+  }
+
+  lolData.on("data", (d) => {
+    buff += d.toString();
+    // console.log("typeof buff: buff", typeof buff, ": ", buff);
+    pump();
+  });
+  lolData.on("error", (err) => {
+    console.error(err);
+  });
+
+  lolData.on("end", () => {
+    // compute general statistics for a given mined battle data object
+    testSuiteObj.runChampStats();
+    console.log("testSuiteObj.genStats: ", testSuiteObj.genStats);
+    // execute probability test
+    // compute p values for a given Mined Battle Stats: object, Champion: string, Opposing Team [string:5]
+    testSuiteObj.computePVals(testSuiteObj.statsObj, "Gangplank", [
+      "Taric",
+      "Fiddlesticks",
+      "Rakan",
+      "Warwick",
+      "Sett",
+    ]);
+  });
+  return testSuiteObj;
 }
 
-function processLine(line) {
-  if (line.indexOf("[[[") === 0) {
-    line = line.slice(1);
-  }
-  if (line.indexOf("]]") === [line.length - 2]) {
-    line = line.slice(0, -1);
-  }
-  if (line[line.length - 1] === ",") {
-    line = line.slice(0, line.length - 1);
-  }
-  if (line[0] === ",") {
-    line = line.slice(1);
-  }
-  if (line.length > 0) {
-    // console.log("processLine -> line", line);
-    let battleArr = JSON.parse(line);
-    // console.log("processLine -> battleArr", battleArr);
-    lolBattleTest.mineData(battleArr);
-  }
-}
 class LolProbability {
   constructor() {
     (this.statsObj = {}), (this.genStats = {});
@@ -167,10 +160,7 @@ class LolProbability {
       this.genStats.champCount++;
     }
 
-    console.log("runChampStats -> champCount", this.genStats.champCount);
-    console.log("runChampStats -> meanSum", this.genStats.meanSum);
     this.genStats.meanP = this.genStats.meanSum / this.genStats.champCount;
-    console.log("runChampStats -> meanP", this.genStats.meanP);
 
     for (const champ of Object.values(this.statsObj)) {
       this.genStats.variance +=
@@ -178,9 +168,8 @@ class LolProbability {
     }
 
     this.genStats.variance = this.genStats.variance / this.genStats.champCount;
-    console.log("runChampStats -> variance", this.genStats.variance);
+
     this.genStats.stdDev = Math.sqrt(this.genStats.variance);
-    console.log("runChampStats -> stdDev", this.genStats.stdDev);
 
     for (const champ of Object.values(this.statsObj)) {
       champ.deviations =
@@ -189,7 +178,7 @@ class LolProbability {
         champ.deviations > 1 ? true : champ.deviations < -1 ? true : false;
       if (champ.deviant === true) {
         console.log(
-          "LolProbability -> runChampStats -> champ.deviations",
+          "LolProbability -> runChampStats -> champ.deviations - outliers: ",
           champ.deviations
         );
       }
@@ -222,11 +211,6 @@ class LolProbability {
     let champProbs = [];
     let oppProbs = [];
     oppArr.forEach((opp, i) => {
-      console.log(
-        "LolProbability -> computePVals -> statsObj[champion][opp].winP",
-        statsObj[champion][opp].winP
-      );
-
       // WPA    // win% vs particular opponent
       champProbs[i] = statsObj[champion][opp].winP;
       // WP(B)  // opp win% vs vs particular champion
@@ -253,52 +237,10 @@ class LolProbability {
 
 // initialize test class object
 const lolBattleTest = new LolProbability();
-// //  mine json data file
-let lolData = fs.createReadStream("./matches.json", {
-  flags: "r",
-  encoding: "utf-8",
-});
-let buff = "";
-
-lolData.on("data", (d) => {
-  buff += d.toString();
-  // console.log("typeof buff: buff", typeof buff, ": ", buff);
-  pump();
-});
-lolData.on("error", (err) => {
-  console.error(err);
-});
-
-let lolChampStats;
-
-lolData.on("end", () => {
-  lolChampStats = lolBattleTest.runChampStats();
-  console.log("lolBattleTest.genStats: ", lolBattleTest.genStats);
-  lolBattleTest.computePVals(lolBattleTest.statsObj, "Gangplank", [
-    "Taric",
-    "Fiddlesticks",
-    "Rakan",
-    "Warwick",
-    "Sett",
-  ]);
-});
-// const lolBattleStats = lolBattleTest.mineData(lolData);
-// console.log("typeof lolBattleStats", typeof lolBattleStats);
-
-// compute general statistics for a given mined battle data object
-// const lolChampStats = lolBattleTest.runChampStats();
-// console.log("lolChampStats", lolChampStats);
-// console.log("lolBattleTest.genStats: ", lolBattleTest.genStats);
+// process incoming data
+loadData(lolBattleTest);
 
 // compute p values for a given Mined Battle Stats: object, Champion: string, Opposing Team [string:5]
-// const lolPValTest = lolBattleTest.computePVals(lolBattleTest.statsObj,"Gangplank", [
-//   "Taric",
-//   "Fiddlesticks",
-//   "Rakan",
-//   "Warwick",
-//   "Sett",
-// ]);
-
 // additional test
 // console.log(
 //   lolBattleTest.computePVals(lolBattleTest.statsObj, "Leblanc", [
@@ -309,3 +251,29 @@ lolData.on("end", () => {
 //     "Mordekaiser",
 //   ])
 // );
+
+/*
+ // data structure
+{
+  char1: {
+    win: ##,
+    loss: ##,
+    win%: ##, 
+    stdDevs: ###,
+    deviant: > 1 || < -1 = true,
+    charA: {
+      win: ##,
+      loss: ##,
+      win%: ##,
+    },
+    charB: {
+      win: ##,
+      loss: ##,
+      win%: ##,
+    },
+    charC...,
+  },
+  
+
+}
+ */
