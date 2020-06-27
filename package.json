@@ -1,0 +1,23 @@
+{
+  "name": "dsblitzchallenge",
+  "version": "1.0.0",
+  "description": "Probability Challenge for Blitz.gg",
+  "main": "src/scripts/main.js",
+  "scripts": {
+    "start": "node src/scripts/main.js",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danst3in/BlitzChallenge.git"
+  },
+  "author": "Dan Stein",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/danst3in/BlitzChallenge/issues"
+  },
+  "homepage": "https://github.com/danst3in/BlitzChallenge#readme",
+  "devDependencies": {
+    "jest": "^26.1.0"
+  }
+}
