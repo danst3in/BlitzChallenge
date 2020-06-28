@@ -73,13 +73,7 @@ function loadData(testSuiteObj, challenger, opponents) {
 
       // execute probability test
       // compute p values for a given Mined Battle Stats: object, Champion: string, Opposing Team [string:5]
-      testSuiteObj.computePVals("Gangplank", [
-        "Evelynn",
-        "Fiddlesticks",
-        "Rakan",
-        "Warwick",
-        "Sett",
-      ]);
+      testSuiteObj.computePVals(challenger, opponents);
       resolve(testSuiteObj);
     });
 
@@ -87,15 +81,5 @@ function loadData(testSuiteObj, challenger, opponents) {
   });
   // return testSuiteObj;
 }
-
-// compute p values for a given Mined Battle Stats: object, Champion: string, Opposing Team [string:5]
-// additional test
-//  "Leblanc", [
-//     "Braum",
-//     "Kayle",
-//     "Anivia",
-//     "Quinn",
-//     "Mordekaiser",
-//   ])
 
 module.exports = { loadData };

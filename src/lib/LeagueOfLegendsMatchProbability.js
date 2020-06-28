@@ -7,7 +7,7 @@ class StatsTracker {
     return this._statsObj;
   }
 
-  updateOpponentStats = (champion, oppChamp, win = true) => {
+  updateOpponentStats(champion, oppChamp, win = true) {
     if (this.getMatchStats(champion, oppChamp)) {
       this.initializeMatchStats(champion, oppChamp);
     }
@@ -18,9 +18,9 @@ class StatsTracker {
       this.updateOpponentLossCount(champion, oppChamp);
       this.updateOpponentWinPercentage(champion, oppChamp);
     }
-  };
+  }
 
-  updateChampionStatistics = (champion, oppTeam, win = true) => {
+  updateChampionStatistics(champion, oppTeam, win = true) {
     if (this.getChampionStats(champion)) {
       this.initializeChampionStats(champion);
     }
@@ -28,15 +28,17 @@ class StatsTracker {
     if (win) {
       this.updateChampionWinCount(champion);
       this.updateChampionWinPercentage(champion);
-      oppTeam.forEach((opponent) => updateOpponentStats(champion, opponent));
+      oppTeam.forEach((opponent) =>
+        this.updateOpponentStats(champion, opponent)
+      );
     } else {
       this.updateChampionLossCount(champion);
       this.updateChampionWinPercentage(champion);
       oppTeam.forEach((opponent) =>
-        updateOpponentStats(champion, opponent, false)
+        this.updateOpponentStats(champion, opponent, false)
       );
     }
-  };
+  }
 
   // Champion overall functions
   getChampionStats(champion) {
@@ -50,7 +52,7 @@ class StatsTracker {
     this._statsObj[champion].loss++;
   }
 
-  updateChampionWinPercentage(champion, oppChamp) {
+  updateChampionWinPercentage(champion) {
     this._statsObj[champion].winP =
       this._statsObj[champion].win /
       (this._statsObj[champion].win + this._statsObj[champion].loss);
@@ -84,6 +86,7 @@ class StatsTracker {
     this._statsObj[champion][oppChamp].win++;
   }
 }
+
 class LolProbability {
   constructor() {
     this._statsObj = new StatsTracker();
@@ -161,21 +164,18 @@ class LolProbability {
    * @returns {object} this._statsObj
    */
   runChampStats() {
-    this._genStats.meanSum = 0;
-    this._genStats.meanP = 0;
-    this._genStats.variance = 0;
-    this._genStats.stdDev = 0;
-    this._genStats.champCount = 0;
-    this._genStats.deviants = [];
+    if (this.getGeneralStats()) {
+      this.initializeGeneralStats();
+    }
 
-    for (const champ of Object.values(this._statsObj)) {
+    for (const champ of Object.values(this.statsObj)) {
       this._genStats.meanSum += champ.winP;
       this._genStats.champCount++;
     }
 
     this._genStats.meanP = this._genStats.meanSum / this._genStats.champCount;
 
-    for (const champ of Object.values(this._statsObj)) {
+    for (const champ of Object.values(this.statsObj)) {
       this._genStats.variance +=
         (champ.winP - this._genStats.meanP) *
         (champ.winP - this._genStats.meanP);
@@ -186,7 +186,7 @@ class LolProbability {
 
     this._genStats.stdDev = Math.sqrt(this._genStats.variance);
 
-    for (const champ of Object.values(this._statsObj)) {
+    for (const champ of Object.values(this.statsObj)) {
       champ.deviations =
         (champ.winP - this._genStats.meanP) / this._genStats.stdDev;
       champ.deviant =
@@ -196,7 +196,20 @@ class LolProbability {
       }
     }
 
-    return this._statsObj;
+    return this._genStats;
+  }
+
+  getGeneralStats() {
+    return this._genStats.meanSum === undefined;
+  }
+
+  initializeGeneralStats() {
+    this._genStats.meanSum = 0;
+    this._genStats.meanP = 0;
+    this._genStats.variance = 0;
+    this._genStats.stdDev = 0;
+    this._genStats.champCount = 0;
+    this._genStats.deviants = [];
   }
 
   // Prob Formula Source - https://sabr.org/journal/article/probabilities-of-victory-in-head-to-head-team-matchups/
@@ -211,22 +224,31 @@ class LolProbability {
 
   // P(WPA|WPB) = WPA*(1 - WPB) / WPA*(1 - WPB)  + WPB*(1 - WPA) // PA = winning%AvsB *(loss%BvsA) / PNoDraw
 
-  // Runtime O(2m)  ~O(k)
+  /**
+   * Runtime ~O(2m) ~~ O(k)
+   * @param {string} champion
+   * @param {[string]} oppArr
+   */
   computePVals(champion, oppArr) {
-    this._champProb[champion] = {
-      pVal: this._statsObj[champion].winP,
-      cProb: {},
-      teamProb: 0,
-    };
+    if (this.getChampionProbability(champion)) {
+      this.initializeChampionProbability(champion);
+    }
+
+    /**
+     * @param champProbs Array of WPA - win% vs particular opponent
+     */
 
     let champProbs = [];
+
+    /**
+     * @param oppProbs Array of WPB - opp win% vs vs particular champion
+     */
+
     let oppProbs = [];
 
     oppArr.forEach((opp, i) => {
-      // WPA    // win% vs particular opponent
-      champProbs[i] = this._statsObj[champion][opp].winP;
-      // WP(B)  // opp win% vs vs particular champion
-      oppProbs[i] = this._statsObj[opp][champion].winP;
+      champProbs[i] = this.statsObj[champion][opp].winP;
+      oppProbs[i] = this.statsObj[opp][champion].winP;
     });
 
     // Secondary Challenge
@@ -266,10 +288,10 @@ Total Conditional Probability vs. Team ${oppArr
         .split(",")
         .join(",")}: ${this._champProb[champion].teamProb}
 Champion's standard deviations from the mean ${
-        this._statsObj[champion].deviations
+        this.statsObj[champion].deviations
       }
 Champion is an outlier based on std dev: ${
-        this._statsObj[champion].deviant === true
+        this.statsObj[champion].deviant === true
       }
 General Statistics:
 Mean Probability for all champions: ${this._genStats.meanP}
@@ -280,6 +302,18 @@ Champion (Population) Count: ${this._genStats.champCount}`;
 
     compileResults(champion);
     return this._results;
+  }
+
+  getChampionProbability(champion) {
+    return this._champProb[champion] === undefined;
+  }
+
+  initializeChampionProbability(champion) {
+    this._champProb[champion] = {
+      pVal: this.statsObj[champion].winP,
+      cProb: {},
+      teamProb: 0,
+    };
   }
 }
 module.exports = {
