@@ -1,11 +1,12 @@
 const fs = require("fs");
 const path = require("path");
+// const { LolProbability } = require("../lib/LeagueOfLegendsMatchProbability");
 
 function loadData(testSuiteObj, challenger, opponents) {
   return new Promise((resolve, reject) => {
     // //  mine json data file
     let lolData = fs.createReadStream(
-      path.join(__dirname, "../../matches.json"),
+      path.join(__dirname, "./mock-matches.json"),
       {
         flags: "r",
         encoding: "utf-8",
@@ -21,6 +22,7 @@ function loadData(testSuiteObj, challenger, opponents) {
 
       while (pointer >= 0) {
         pointer += 3;
+
         processLine(buff.slice(0, pointer));
         buff = buff.slice(pointer + 1);
         if (buff[0] === ",") {
@@ -47,14 +49,17 @@ function loadData(testSuiteObj, challenger, opponents) {
       if (line[0] === ",") {
         line = line.slice(1);
       }
+
       if (line.length > 0) {
         let battleArr = JSON.parse(line);
+
         testSuiteObj.mineData(battleArr);
       }
     }
 
     lolData.on("data", (d) => {
       buff += d.toString();
+
       pump();
     });
     lolData.on("error", (err) => {
@@ -63,16 +68,34 @@ function loadData(testSuiteObj, challenger, opponents) {
 
     lolData.on("end", () => {
       // compute general statistics for a given mined battle data object
+      // console.log("loadData -> testSuiteObj", testSuiteObj);
       testSuiteObj.runChampStats();
 
       // execute probability test
       // compute p values for a given Mined Battle Stats: object, Champion: string, Opposing Team [string:5]
-      testSuiteObj.computePVals(challenger, opponents);
+      testSuiteObj.computePVals("Gangplank", [
+        "Evelynn",
+        "Fiddlesticks",
+        "Rakan",
+        "Warwick",
+        "Sett",
+      ]);
       resolve(testSuiteObj);
     });
 
     lolData.on("error", reject);
   });
+  // return testSuiteObj;
 }
+
+// compute p values for a given Mined Battle Stats: object, Champion: string, Opposing Team [string:5]
+// additional test
+//  "Leblanc", [
+//     "Braum",
+//     "Kayle",
+//     "Anivia",
+//     "Quinn",
+//     "Mordekaiser",
+//   ])
 
 module.exports = { loadData };

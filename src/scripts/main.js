@@ -4,7 +4,25 @@ const { loadData } = require("../utils/load-data");
 // initialize test class object
 const lolBattleTest = new LolProbability();
 // process incoming data
-loadData(lolBattleTest);
+
+loadData(lolBattleTest, "Gangplank", [
+  "Evelynn",
+  "Fiddlesticks",
+  "Rakan",
+  "Warwick",
+  "Sett",
+])
+  .then((data) => console.log(data.results))
+  .catch((err) => console.error(err));
+
+//    Additional test set
+//    "Leblanc", [
+//     "Braum",
+//     "Kayle",
+//     "Anivia",
+//     "Quinn",
+//     "Mordekaiser",
+//   ])
 
 /*
  // data structure

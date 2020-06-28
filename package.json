@@ -5,7 +5,7 @@
   "main": "src/scripts/main.js",
   "scripts": {
     "start": "node src/scripts/main.js",
-    "test": "jest"
+    "test": "jest --verbose"
   },
   "repository": {
     "type": "git",
