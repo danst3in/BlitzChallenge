@@ -85,3 +85,39 @@ PB = winning%BvsA \*(loss%AvsB) / PNoDraw
 P(WPA|WPB) = WPA*(1 - WPB) / WPA*(1 - WPB) + WPB\*(1 - WPA)
 
 PA = winning%AvsB \*(loss%BvsA) / PNoDraw
+
+#### Additional Comments
+
+I chose to feed the json dataset as a node stream that was pumped to the main functions on a per match basis. In the end this seems to have slowed the program run time by ~15%-25%.
+This was added after the program was mostly completed as an experiment so I chose to leave it in there.
+With further tweaking of the size of each data chunk (ie. increase from 1 to 100 matches) perhaps this could be improved?
+
+For the given use case of testing a single Champion's probabilities I opted to use dictionary-like objects offering direct lookup.
+Each Champion is represented by an object containing their overall win, loss, and win%. Within this object is also an object for each of the opponents they have ever competed with and all of their individual matchup data. The individual matchup data is later used for calculating the conditional probabilities.
+
+```js
+{
+  char1: {
+    win: ##,
+    loss: ##,
+    win%: ##,
+    stdDevs: ###,
+    deviant: > 1 || < -1 = true,
+    charA: {
+      win: ##,
+      loss: ##,
+      win%: ##,
+    },
+    charB: {
+      win: ##,
+      loss: ##,
+      win%: ##,
+    },
+    charC...,
+  },
+}
+```
+
+As the program continues to run the Champion object is updated to include individual stats of standard deviation and if they are more than 1 std dev from the mean it is marked true to be search later (if this was going to happen frequently it might save time to sort champions by std dev and perform a binary search).
+
+After all general stats for the entire data set are completed the probabilities will be computed for the chosen Champion and the chosen opposing team.

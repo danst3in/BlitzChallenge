@@ -293,6 +293,7 @@ Champion's standard deviations from the mean ${
 Champion is an outlier based on std dev: ${
         this.statsObj[champion].deviant === true
       }
+      
 General Statistics:
 Mean Probability for all champions: ${this._genStats.meanP}
 Variance for all champions: ${this._genStats.variance}
