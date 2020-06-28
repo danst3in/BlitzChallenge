@@ -1,13 +1,99 @@
+class StatsTracker {
+  constructor() {
+    this._statsObj = {};
+  }
+
+  getAccumulatedStats() {
+    return this._statsObj;
+  }
+
+  updateOpponentStats = (champion, oppChamp, win = true) => {
+    if (this.getMatchStats(champion, oppChamp)) {
+      this.initializeMatchStats(champion, oppChamp);
+    }
+    if (win) {
+      this.updateOpponentWinCount(champion, oppChamp);
+      this.updateOpponentWinPercentage(champion, oppChamp);
+    } else {
+      this.updateOpponentLossCount(champion, oppChamp);
+      this.updateOpponentWinPercentage(champion, oppChamp);
+    }
+  };
+
+  updateChampionStatistics = (champion, oppTeam, win = true) => {
+    if (this.getChampionStats(champion)) {
+      this.initializeChampionStats(champion);
+    }
+
+    if (win) {
+      this.updateChampionWinCount(champion);
+      this.updateChampionWinPercentage(champion);
+      oppTeam.forEach((opponent) => updateOpponentStats(champion, opponent));
+    } else {
+      this.updateChampionLossCount(champion);
+      this.updateChampionWinPercentage(champion);
+      oppTeam.forEach((opponent) =>
+        updateOpponentStats(champion, opponent, false)
+      );
+    }
+  };
+
+  // Champion overall functions
+  getChampionStats(champion) {
+    return this._statsObj[champion] === undefined;
+  }
+
+  initializeChampionStats(champion) {
+    this._statsObj[champion] = { win: 0, loss: 0, winP: 0 };
+  }
+  updateChampionLossCount(champion) {
+    this._statsObj[champion].loss++;
+  }
+
+  updateChampionWinPercentage(champion, oppChamp) {
+    this._statsObj[champion].winP =
+      this._statsObj[champion].win /
+      (this._statsObj[champion].win + this._statsObj[champion].loss);
+  }
+
+  updateChampionWinCount(champion) {
+    this._statsObj[champion].win++;
+  }
+
+  // Matchup vs opponent functions
+
+  getMatchStats(champion, oppChamp) {
+    return this._statsObj[champion][oppChamp] === undefined;
+  }
+
+  initializeMatchStats(champion, oppChamp) {
+    this._statsObj[champion][oppChamp] = { win: 0, loss: 0, winP: 0 };
+  }
+
+  updateOpponentLossCount(champion, oppChamp) {
+    this._statsObj[champion][oppChamp].loss++;
+  }
+
+  updateOpponentWinPercentage(champion, oppChamp) {
+    this._statsObj[champion][oppChamp].winP =
+      this._statsObj[champion][oppChamp].win /
+      (this._statsObj[champion][oppChamp].win +
+        this._statsObj[champion][oppChamp].loss);
+  }
+  updateOpponentWinCount(champion, oppChamp) {
+    this._statsObj[champion][oppChamp].win++;
+  }
+}
 class LolProbability {
   constructor() {
-    (this._statsObj = {}),
-      (this._genStats = {}),
-      (this._champProb = {}),
-      (this._results = "");
+    this._statsObj = new StatsTracker();
+    this._genStats = {};
+    this._champProb = {};
+    this._results = "";
   }
 
   get statsObj() {
-    return this._statsObj;
+    return this._statsObj.getAccumulatedStats();
   }
 
   get genStats() {
@@ -25,70 +111,55 @@ class LolProbability {
     this._results = str;
   }
 
-  // receives Input: array of arrays, returns Output: Stats Object
-  // Runtime ~O(n*2m^2) ~~O(n*k)
-  mineData(arr) {
-    if (!arr) {
+  /**
+   * Runtime ~O(n*2m^2) ~~ O(n*k)
+   *
+   * @param {*} matchArray array of Opponent Strings
+   *
+   * @returns {object} updated match history Stats Object
+   */
+  mineData(matchArray) {
+    if (!matchArray) {
       throw new Error("Dataset contains undefined matches");
     }
 
-    const updateOpp = (champion, oppChamp, win = true) => {
-      if (this._statsObj[champion][oppChamp] === undefined) {
-        this._statsObj[champion][oppChamp] = { win: 0, loss: 0, winP: 0 };
-      }
-      if (win) {
-        this._statsObj[champion][oppChamp].win++;
-        this._statsObj[champion][oppChamp].winP =
-          this._statsObj[champion][oppChamp].win /
-          (this._statsObj[champion][oppChamp].win +
-            this._statsObj[champion][oppChamp].loss);
-      } else {
-        this._statsObj[champion][oppChamp].loss++;
-        this._statsObj[champion][oppChamp].winP =
-          this._statsObj[champion][oppChamp].win /
-          (this._statsObj[champion][oppChamp].win +
-            this._statsObj[champion][oppChamp].loss);
-      }
-    };
-
-    const updateChamp = (champion, oppTeam, win = true) => {
-      if (this._statsObj[champion] === undefined) {
-        this._statsObj[champion] = { win: 0, loss: 0, winP: 0 };
-      }
-
-      if (win) {
-        this._statsObj[champion].win++;
-        this._statsObj[champion].winP =
-          this._statsObj[champion].win /
-          (this._statsObj[champion].win + this._statsObj[champion].loss);
-        oppTeam.forEach((opponent) => updateOpp(champion, opponent));
-      } else {
-        this._statsObj[champion].loss++;
-        this._statsObj[champion].winP =
-          this._statsObj[champion].win /
-          (this._statsObj[champion].win + this._statsObj[champion].loss);
-        oppTeam.forEach((opponent) => updateOpp(champion, opponent, false));
-      }
-    };
-
-    if (arr.length < 3) {
-      console.error(`Match #${arr} - is missing data.`);
+    if (matchArray.length < 3) {
+      console.error(`Match ${matchArray} - is corrupted, skipping...`);
     } else {
-      let champOne = arr[0];
-      let champTwo = arr[1];
+      const teamOne = matchArray[0];
+      const teamTwo = matchArray[1];
+      const winningTeam = matchArray[2];
+      const isTeamOneWinner = winningTeam === 0;
 
-      if (arr[2] === 1) {
-        [champOne, champTwo] = [champTwo, champOne];
+      if (isTeamOneWinner) {
+        teamOne.forEach((teamMember) =>
+          this._statsObj.updateChampionStatistics(teamMember, teamTwo)
+        );
+        teamTwo.forEach((teamMember) =>
+          this._statsObj.updateChampionStatistics(teamMember, teamOne, false)
+        );
+      } else {
+        teamOne.forEach((teamMember) =>
+          this._statsObj.updateChampionStatistics(teamMember, teamTwo, false)
+        );
+        teamTwo.forEach((teamMember) =>
+          this._statsObj.updateChampionStatistics(teamMember, teamOne)
+        );
       }
-
-      champOne.forEach((champ) => updateChamp(champ, champTwo));
-      champTwo.forEach((champ) => updateChamp(champ, champOne, false));
     }
 
-    return this._statsObj;
+    return this._statsObj.getAccumulatedStats();
   }
 
-  // Runtime O(3n)
+  /**
+   * Runtime O(3n)
+   *
+   * Compute General Statistics for Data Set
+   *
+   * Update this._genStats object
+   *
+   * @returns {object} this._statsObj
+   */
   runChampStats() {
     this._genStats.meanSum = 0;
     this._genStats.meanP = 0;
