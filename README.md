@@ -70,7 +70,7 @@ PB = WPB*(1 - WPA), PB = winning%BvsA *(loss%AvsB)
 
 PDraw = 1 - WPA*(1 - WPB) + WPB*(1 - WPA)
 
-#### Make the chance of draws a non-factor...
+### Make the chance of draws a non-factor...
 
 PA = WPA*(1 - WPB) / WPA*(1 - WPB) + WPB\*(1 - WPA)
 
@@ -80,13 +80,13 @@ PB = WPB*(1 - WPA) / WPA*(1 - WPB) + WPB\*(1 - WPA)
 
 PB = winning%BvsA \*(loss%AvsB) / PNoDraw
 
-#### Final Conditional Probability of A winning given opponent B
+### Final Conditional Probability of A winning given opponent B
 
 P(WPA|WPB) = WPA*(1 - WPB) / WPA*(1 - WPB) + WPB\*(1 - WPA)
 
 PA = winning%AvsB \*(loss%BvsA) / PNoDraw
 
-#### Additional Comments
+# Additional Comments
 
 I chose to feed the json dataset as a node stream that was pumped to the main functions on a per match basis. In the end this seems to have slowed the program run time by ~15%-25%.
 This was added after the program was mostly completed as an experiment so I chose to leave it in there.
