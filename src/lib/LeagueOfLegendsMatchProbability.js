@@ -1,13 +1,102 @@
+class StatsTracker {
+  constructor() {
+    this._statsObj = {};
+  }
+
+  getAccumulatedStats() {
+    return this._statsObj;
+  }
+
+  updateOpponentStats(champion, oppChamp, win = true) {
+    if (this.getMatchStats(champion, oppChamp)) {
+      this.initializeMatchStats(champion, oppChamp);
+    }
+    if (win) {
+      this.updateOpponentWinCount(champion, oppChamp);
+      this.updateOpponentWinPercentage(champion, oppChamp);
+    } else {
+      this.updateOpponentLossCount(champion, oppChamp);
+      this.updateOpponentWinPercentage(champion, oppChamp);
+    }
+  }
+
+  updateChampionStatistics(champion, oppTeam, win = true) {
+    if (this.getChampionStats(champion)) {
+      this.initializeChampionStats(champion);
+    }
+
+    if (win) {
+      this.updateChampionWinCount(champion);
+      this.updateChampionWinPercentage(champion);
+      oppTeam.forEach((opponent) =>
+        this.updateOpponentStats(champion, opponent)
+      );
+    } else {
+      this.updateChampionLossCount(champion);
+      this.updateChampionWinPercentage(champion);
+      oppTeam.forEach((opponent) =>
+        this.updateOpponentStats(champion, opponent, false)
+      );
+    }
+  }
+
+  // Champion overall functions
+  getChampionStats(champion) {
+    return this._statsObj[champion] === undefined;
+  }
+
+  initializeChampionStats(champion) {
+    this._statsObj[champion] = { win: 0, loss: 0, winP: 0 };
+  }
+  updateChampionLossCount(champion) {
+    this._statsObj[champion].loss++;
+  }
+
+  updateChampionWinPercentage(champion) {
+    this._statsObj[champion].winP =
+      this._statsObj[champion].win /
+      (this._statsObj[champion].win + this._statsObj[champion].loss);
+  }
+
+  updateChampionWinCount(champion) {
+    this._statsObj[champion].win++;
+  }
+
+  // Matchup vs opponent functions
+
+  getMatchStats(champion, oppChamp) {
+    return this._statsObj[champion][oppChamp] === undefined;
+  }
+
+  initializeMatchStats(champion, oppChamp) {
+    this._statsObj[champion][oppChamp] = { win: 0, loss: 0, winP: 0 };
+  }
+
+  updateOpponentLossCount(champion, oppChamp) {
+    this._statsObj[champion][oppChamp].loss++;
+  }
+
+  updateOpponentWinPercentage(champion, oppChamp) {
+    this._statsObj[champion][oppChamp].winP =
+      this._statsObj[champion][oppChamp].win /
+      (this._statsObj[champion][oppChamp].win +
+        this._statsObj[champion][oppChamp].loss);
+  }
+  updateOpponentWinCount(champion, oppChamp) {
+    this._statsObj[champion][oppChamp].win++;
+  }
+}
+
 class LolProbability {
   constructor() {
-    (this._statsObj = {}),
-      (this._genStats = {}),
-      (this._champProb = {}),
-      (this._results = "");
+    this._statsObj = new StatsTracker();
+    this._genStats = {};
+    this._champProb = {};
+    this._results = "";
   }
 
   get statsObj() {
-    return this._statsObj;
+    return this._statsObj.getAccumulatedStats();
   }
 
   get genStats() {
@@ -25,86 +114,68 @@ class LolProbability {
     this._results = str;
   }
 
-  // receives Input: array of arrays, returns Output: Stats Object
-  // Runtime ~O(n*2m^2) ~~O(n*k)
-  mineData(arr) {
-    if (!arr) {
+  /**
+   * Runtime ~O(n*2m^2) ~~ O(n*k)
+   *
+   * @param {*} matchArray array of Opponent Strings
+   *
+   * @returns {object} updated match history Stats Object
+   */
+  mineData(matchArray) {
+    if (!matchArray) {
       throw new Error("Dataset contains undefined matches");
     }
 
-    const updateOpp = (champion, oppChamp, win = true) => {
-      if (this._statsObj[champion][oppChamp] === undefined) {
-        this._statsObj[champion][oppChamp] = { win: 0, loss: 0, winP: 0 };
-      }
-      if (win) {
-        this._statsObj[champion][oppChamp].win++;
-        this._statsObj[champion][oppChamp].winP =
-          this._statsObj[champion][oppChamp].win /
-          (this._statsObj[champion][oppChamp].win +
-            this._statsObj[champion][oppChamp].loss);
-      } else {
-        this._statsObj[champion][oppChamp].loss++;
-        this._statsObj[champion][oppChamp].winP =
-          this._statsObj[champion][oppChamp].win /
-          (this._statsObj[champion][oppChamp].win +
-            this._statsObj[champion][oppChamp].loss);
-      }
-    };
-
-    const updateChamp = (champion, oppTeam, win = true) => {
-      if (this._statsObj[champion] === undefined) {
-        this._statsObj[champion] = { win: 0, loss: 0, winP: 0 };
-      }
-
-      if (win) {
-        this._statsObj[champion].win++;
-        this._statsObj[champion].winP =
-          this._statsObj[champion].win /
-          (this._statsObj[champion].win + this._statsObj[champion].loss);
-        oppTeam.forEach((opponent) => updateOpp(champion, opponent));
-      } else {
-        this._statsObj[champion].loss++;
-        this._statsObj[champion].winP =
-          this._statsObj[champion].win /
-          (this._statsObj[champion].win + this._statsObj[champion].loss);
-        oppTeam.forEach((opponent) => updateOpp(champion, opponent, false));
-      }
-    };
-
-    if (arr.length < 3) {
-      console.error(`Match #${arr} - is missing data.`);
+    if (matchArray.length < 3) {
+      console.error(`Match ${matchArray} - is corrupted, skipping...`);
     } else {
-      let champOne = arr[0];
-      let champTwo = arr[1];
+      const teamOne = matchArray[0];
+      const teamTwo = matchArray[1];
+      const winningTeam = matchArray[2];
+      const isTeamOneWinner = winningTeam === 0;
 
-      if (arr[2] === 1) {
-        [champOne, champTwo] = [champTwo, champOne];
+      if (isTeamOneWinner) {
+        teamOne.forEach((teamMember) =>
+          this._statsObj.updateChampionStatistics(teamMember, teamTwo)
+        );
+        teamTwo.forEach((teamMember) =>
+          this._statsObj.updateChampionStatistics(teamMember, teamOne, false)
+        );
+      } else {
+        teamOne.forEach((teamMember) =>
+          this._statsObj.updateChampionStatistics(teamMember, teamTwo, false)
+        );
+        teamTwo.forEach((teamMember) =>
+          this._statsObj.updateChampionStatistics(teamMember, teamOne)
+        );
       }
-
-      champOne.forEach((champ) => updateChamp(champ, champTwo));
-      champTwo.forEach((champ) => updateChamp(champ, champOne, false));
     }
 
-    return this._statsObj;
+    return this._statsObj.getAccumulatedStats();
   }
 
-  // Runtime O(3n)
+  /**
+   * Runtime O(3n)
+   *
+   * Compute General Statistics for Data Set
+   *
+   * Update this._genStats object
+   *
+   * @returns {object} this._statsObj
+   */
   runChampStats() {
-    this._genStats.meanSum = 0;
-    this._genStats.meanP = 0;
-    this._genStats.variance = 0;
-    this._genStats.stdDev = 0;
-    this._genStats.champCount = 0;
-    this._genStats.deviants = [];
+    if (this.getGeneralStats()) {
+      this.initializeGeneralStats();
+    }
 
-    for (const champ of Object.values(this._statsObj)) {
+    for (const champ of Object.values(this.statsObj)) {
       this._genStats.meanSum += champ.winP;
       this._genStats.champCount++;
     }
 
     this._genStats.meanP = this._genStats.meanSum / this._genStats.champCount;
 
-    for (const champ of Object.values(this._statsObj)) {
+    for (const champ of Object.values(this.statsObj)) {
       this._genStats.variance +=
         (champ.winP - this._genStats.meanP) *
         (champ.winP - this._genStats.meanP);
@@ -115,7 +186,7 @@ class LolProbability {
 
     this._genStats.stdDev = Math.sqrt(this._genStats.variance);
 
-    for (const champ of Object.values(this._statsObj)) {
+    for (const champ of Object.values(this.statsObj)) {
       champ.deviations =
         (champ.winP - this._genStats.meanP) / this._genStats.stdDev;
       champ.deviant =
@@ -125,7 +196,20 @@ class LolProbability {
       }
     }
 
-    return this._statsObj;
+    return this._genStats;
+  }
+
+  getGeneralStats() {
+    return this._genStats.meanSum === undefined;
+  }
+
+  initializeGeneralStats() {
+    this._genStats.meanSum = 0;
+    this._genStats.meanP = 0;
+    this._genStats.variance = 0;
+    this._genStats.stdDev = 0;
+    this._genStats.champCount = 0;
+    this._genStats.deviants = [];
   }
 
   // Prob Formula Source - https://sabr.org/journal/article/probabilities-of-victory-in-head-to-head-team-matchups/
@@ -140,22 +224,31 @@ class LolProbability {
 
   // P(WPA|WPB) = WPA*(1 - WPB) / WPA*(1 - WPB)  + WPB*(1 - WPA) // PA = winning%AvsB *(loss%BvsA) / PNoDraw
 
-  // Runtime O(2m)  ~O(k)
+  /**
+   * Runtime ~O(2m) ~~ O(k)
+   * @param {string} champion
+   * @param {[string]} oppArr
+   */
   computePVals(champion, oppArr) {
-    this._champProb[champion] = {
-      pVal: this._statsObj[champion].winP,
-      cProb: {},
-      teamProb: 0,
-    };
+    if (this.getChampionProbability(champion)) {
+      this.initializeChampionProbability(champion);
+    }
+
+    /**
+     * @param champProbs Array of WPA - win% vs particular opponent
+     */
 
     let champProbs = [];
+
+    /**
+     * @param oppProbs Array of WPB - opp win% vs vs particular champion
+     */
+
     let oppProbs = [];
 
     oppArr.forEach((opp, i) => {
-      // WPA    // win% vs particular opponent
-      champProbs[i] = this._statsObj[champion][opp].winP;
-      // WP(B)  // opp win% vs vs particular champion
-      oppProbs[i] = this._statsObj[opp][champion].winP;
+      champProbs[i] = this.statsObj[champion][opp].winP;
+      oppProbs[i] = this.statsObj[opp][champion].winP;
     });
 
     // Secondary Challenge
@@ -195,11 +288,12 @@ Total Conditional Probability vs. Team ${oppArr
         .split(",")
         .join(",")}: ${this._champProb[champion].teamProb}
 Champion's standard deviations from the mean ${
-        this._statsObj[champion].deviations
+        this.statsObj[champion].deviations
       }
 Champion is an outlier based on std dev: ${
-        this._statsObj[champion].deviant === true
+        this.statsObj[champion].deviant === true
       }
+      
 General Statistics:
 Mean Probability for all champions: ${this._genStats.meanP}
 Variance for all champions: ${this._genStats.variance}
@@ -209,6 +303,18 @@ Champion (Population) Count: ${this._genStats.champCount}`;
 
     compileResults(champion);
     return this._results;
+  }
+
+  getChampionProbability(champion) {
+    return this._champProb[champion] === undefined;
+  }
+
+  initializeChampionProbability(champion) {
+    this._champProb[champion] = {
+      pVal: this.statsObj[champion].winP,
+      cProb: {},
+      teamProb: 0,
+    };
   }
 }
 module.exports = {

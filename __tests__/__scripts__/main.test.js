@@ -6,15 +6,25 @@ const { loadData } = require("../../__mocks__/load-data.js");
 describe("Processed incoming data: ", () => {
   test("Returned data is instance of LoLProbability Class", () => {
     const lolBattleTest = new LolProbability();
-    return loadData(lolBattleTest).then((classObj) => {
-      // console.log("test1!");
+    return loadData(lolBattleTest, "Gangplank", [
+      "Evelynn",
+      "Fiddlesticks",
+      "Rakan",
+      "Warwick",
+      "Sett",
+    ]).then((classObj) => {
       expect(classObj.constructor.name).toBe("LolProbability");
     });
   });
   test("Returned general statistics equal expected result", () => {
     const lolStatTest = new LolProbability();
-    return loadData(lolStatTest).then((classObj) => {
-      // console.log("test2!");
+    return loadData(lolStatTest, "Gangplank", [
+      "Evelynn",
+      "Fiddlesticks",
+      "Rakan",
+      "Warwick",
+      "Sett",
+    ]).then((classObj) => {
       expect(classObj.genStats).toEqual({
         meanSum: 5,
         meanP: 0.5,
@@ -26,3 +36,13 @@ describe("Processed incoming data: ", () => {
     });
   });
 });
+
+// compute p values for a given Mined Battle Stats: object, Champion: string, Opposing Team [string:5]
+// additional test
+//  "Leblanc", [
+//     "Braum",
+//     "Kayle",
+//     "Anivia",
+//     "Quinn",
+//     "Mordekaiser",
+//   ])
