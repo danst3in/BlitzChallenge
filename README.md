@@ -2,7 +2,9 @@
 
 Please see below the challenge instructions for my overall solution strategy.
 
-The program can be run via the following command
+Use `npm install` to install jest for testing support.
+
+The probability challenge program can be run via the following command
 
 ```js
  npm start
