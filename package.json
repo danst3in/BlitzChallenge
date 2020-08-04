@@ -18,6 +18,6 @@
   },
   "homepage": "https://github.com/danst3in/BlitzChallenge#readme",
   "devDependencies": {
-    "jest": "^26.1.0"
+    "jest": "^26.2.2"
   }
 }
